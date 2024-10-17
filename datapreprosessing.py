@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import ast
 from scipy.stats import skew, kurtosis
+import time
+import os
 
 
 def calc_stats(feature):
@@ -113,39 +115,45 @@ def load_tracks(filepath):
 
         return tracks
 
-'''
-import time
-X = []
-y = []
+def process_dataset(audio_dir):
 
-# Extract features for each track in fma_small
-for idx, row in fma_small.iterrows():
-    #start_time = time.time()
+    filepath = 'fma_small/fma_metadata/tracks.csv'
+    tracks = load_tracks(filepath)
+    fma_medium = tracks[tracks['set', 'subset'].isin(['small', 'medium'])]
 
-    track_id = row.name 
-    genre_label = row[('track', 'genre_top')]  
+    # Print the shape of the small subset
+    print(fma_medium.shape)    
+    X = []
+    y = []
+
+    # Extract features for each track in fma_small
+    for idx, row in fma_medium.iterrows():
+        #start_time = time.time()
+
+        track_id = row.name 
+        genre_label = row[('track', 'genre_top')]  
+        
+        # Construct the file path
+        directory = '{:03d}'.format(track_id // 1000)
+        filename = '{:06d}.mp3'.format(track_id)
+        file_path = os.path.join(audio_dir, directory, filename)
+
+        try:
+            features = extract_features(file_path)
+            X.append(features)
+            y.append(genre_label)
+        except Exception as e:
+            print(f"Error processing {file_path}: {e}")
+        if idx % 1000 == 0 and idx != 0:
+                print(f"Processed {idx} files so far")
+        #elapsed_time = time.time() - start_time
+        #print(elapsed_time)
+
+
+    # Convert lists to numpy arrays
+    X = np.array(X)
+    y = np.array(y)
+
+    np.save('X_medium.npy', X)
+    np.save('y_medium.npy', y)
     
-    # Construct the file path
-    directory = '{:03d}'.format(track_id // 1000)
-    filename = '{:06d}.mp3'.format(track_id)
-    file_path = os.path.join(audio_dir, directory, filename)
-    
-    try:
-        features = extract_features(file_path)
-        X.append(features)
-        y.append(genre_label)
-    except Exception as e:
-        print(f"Error processing {file_path}: {e}")
-    if idx % 1000 == 0 and idx != 0:
-            print(f"Processed {idx} files so far")
-    #elapsed_time = time.time() - start_time
-    #print(elapsed_time)
-
-
-# Convert lists to numpy arrays
-X = np.array(X)
-y = np.array(y)
-
-np.save('X.npy', X)
-np.save('y.npy', y)
- '''
